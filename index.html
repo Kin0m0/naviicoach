@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navii — Real-time AI sales coach for sharp discovery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blanc: #FFFFFF;
+    --navy: #1E2448;
+    --navy-fonce: #161C3A;
+    --peche: #FDEEE1;
+    --rose: #F3A9D6;
+    --lilas: #A78BFA;
+    --periwinkle: #7C8CF8;
+    --cyan: #4FC8F5;
+    --azur: #1FA7E8;
+    --azur-texte: #0E6FA8;
+    --gris-bleu: #5A6080;
+    --hairline: rgba(30, 36, 72, 0.12);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--blanc);
+    color: var(--navy);
+    overflow: hidden;
+    caret-color: var(--azur);
+  }
+
+  ::selection { background: var(--rose); color: var(--navy-fonce); }
+
+  :focus-visible { outline: 2px solid var(--azur); outline-offset: 3px; border-radius: 4px; }
+
+  /* ---- L'horizon vivant ---- */
+  .horizon {
+    position: fixed;
+    inset: auto 0 0 0;
+    height: 52vh;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(64px);
+  }
+  .blob.b1 { width: 58vw; height: 52vh; left: -12vw; bottom: -22vh; background: var(--cyan);      animation: drift1 16s ease-in-out infinite alternate; }
+  .blob.b2 { width: 46vw; height: 46vh; left: 29vw;  bottom: -24vh; background: var(--periwinkle);animation: drift2 19s ease-in-out infinite alternate; }
+  .blob.b3 { width: 56vw; height: 46vh; right: -14vw; bottom: -20vh; background: var(--rose);     animation: drift3 14s ease-in-out infinite alternate; }
+  .blob.b4 { width: 44vw; height: 30vh; left: 10vw;  bottom: -14vh; background: var(--peche); animation: drift2 22s ease-in-out infinite alternate-reverse; }
+  .blob.b5 { width: 30vw; height: 26vh; left: 48vw;  bottom: -16vh; background: var(--lilas); opacity: 0.8; animation: drift3 18s ease-in-out infinite alternate-reverse; }
+
+  @keyframes drift1 { from { transform: translate(0, 0) scale(1); }    to { transform: translate(6vw, -4vh) scale(1.12); } }
+  @keyframes drift2 { from { transform: translate(0, 0) scale(1.05); } to { transform: translate(-5vw, -2vh) scale(0.95); } }
+  @keyframes drift3 { from { transform: translate(0, 2vh) scale(1); }  to { transform: translate(-4vw, -5vh) scale(1.1); } }
+
+  .horizon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, var(--blanc) 0%, rgba(255,255,255,0.55) 30%, rgba(255,255,255,0) 68%);
+  }
+
+  /* ---- Structure ---- */
+  .page {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0 clamp(24px, 6vw, 88px);
+    z-index: 1;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 34px 0 0;
+  }
+  .marque {
+    font-family: 'Instrument Sans', sans-serif;
+    font-weight: 600;
+    font-size: 21px;
+    letter-spacing: -0.01em;
+  }
+  .btn-nav {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--navy);
+    text-decoration: none;
+    padding: 9px 20px;
+    border: 1px solid var(--hairline);
+    border-radius: 100px;
+    background: rgba(255,255,255,0.7);
+    transition: transform 160ms var(--ease-out), border-color 200ms ease, background 200ms ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-nav:hover { border-color: var(--navy); background: var(--blanc); }
+  }
+  .btn-nav:active { transform: scale(0.97); }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    align-items: center;
+    gap: clamp(32px, 5vw, 72px);
+  }
+
+  h1 {
+    font-family: 'Instrument Sans', sans-serif;
+    font-weight: 700;
+    font-size: clamp(36px, 3.9vw, 57px);
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+  }
+  h1 .casse { display: block; }
+  h1 .compte {
+    color: var(--azur);
+    background: linear-gradient(94deg, #1899DD 10%, var(--periwinkle) 95%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .sous {
+    margin-top: 24px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-weight: 500;
+    font-size: clamp(18px, 1.5vw, 21px);
+    line-height: 1.5;
+    color: var(--gris-bleu);
+    max-width: 46ch;
+  }
+
+  .actions {
+    margin-top: 38px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+  .btn-primaire {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--blanc);
+    background: var(--navy);
+    text-decoration: none;
+    padding: 16px 30px;
+    border-radius: 100px;
+    box-shadow: 0 10px 28px rgba(22, 28, 58, 0.22), 0 2px 6px rgba(22, 28, 58, 0.14);
+    transition: transform 160ms var(--ease-out), background 200ms ease, box-shadow 200ms ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primaire:hover { background: var(--navy-fonce); transform: translateY(-2px); box-shadow: 0 14px 34px rgba(22, 28, 58, 0.26), 0 3px 8px rgba(22, 28, 58, 0.16); }
+  }
+  .btn-primaire:active { transform: scale(0.97); }
+
+  .lien-demo {
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--navy);
+    text-decoration: none;
+    position: relative;
+    padding-bottom: 3px;
+  }
+  .lien-demo::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 100%; height: 1.5px;
+    background: var(--azur);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 240ms var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .lien-demo:hover::after { transform: scaleX(1); }
+  }
+
+  /* ---- La fenêtre Navii, vivante ---- */
+  .fenetre {
+    position: relative;
+    justify-self: end;
+    width: min(360px, 100%);
+    background: var(--blanc);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow:
+      0 40px 90px rgba(22, 28, 58, 0.18),
+      0 12px 30px rgba(22, 28, 58, 0.12),
+      0 0 0 1px rgba(30, 36, 72, 0.05);
+  }
+  .barre {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .barre .titre { font-family: 'Instrument Sans', sans-serif; font-weight: 600; font-size: 14px; }
+  .statut {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--azur-texte);
+  }
+  .statut i {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--azur);
+    animation: pouls 1.8s ease-in-out infinite;
+  }
+  @keyframes pouls { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0 14px;
+  }
+  .vivant {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    animation: respire 4.6s ease-in-out infinite;
+  }
+  @keyframes respire { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.018); } }
+  .vivant svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .vivant .piste-a { fill: none; stroke: rgba(30, 36, 72, 0.07); stroke-width: 7; }
+  .vivant canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .score {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 41px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    transition: transform 300ms var(--ease-pop), color 300ms ease;
+  }
+  .score.gagne { transform: scale(1.12); color: var(--azur-texte); }
+
+  .multi {
+    position: absolute;
+    top: 12px;
+    right: calc(50% - 90px);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #FFFFFF;
+    background: linear-gradient(135deg, var(--periwinkle), var(--azur));
+    padding: 4px 10px;
+    border-radius: 100px;
+    box-shadow: 0 6px 16px rgba(124, 140, 248, 0.35);
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 320ms var(--ease-pop), transform 320ms var(--ease-pop);
+  }
+  .multi.la { opacity: 1; transform: scale(1); }
+
+  .gain {
+    position: absolute;
+    left: calc(50% + 68px);
+    top: 42px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--azur-texte);
+    font-variant-numeric: tabular-nums;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .gain.vole { animation: vole 1100ms var(--ease-out) forwards; }
+  @keyframes vole {
+    0% { opacity: 0; transform: translateY(8px); }
+    18% { opacity: 1; transform: translateY(0); }
+    70% { opacity: 1; transform: translateY(-14px); }
+    100% { opacity: 0; transform: translateY(-24px); }
+  }
+
+  .best {
+    text-align: center;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    color: var(--gris-bleu);
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--hairline);
+    margin: 0 20px;
+  }
+  .best b { color: var(--navy); font-weight: 600; }
+
+  .quetes { padding: 13px 20px 2px; }
+  .famille { margin-bottom: 10px; }
+  .famille h2 {
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    color: var(--gris-bleu);
+    margin-bottom: 6px;
+  }
+  .jauge {
+    display: grid;
+    grid-template-columns: 76px 1fr 30px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .jauge label { font-size: 12px; font-weight: 500; color: var(--navy); }
+  .jauge .piste-j {
+    height: 6px;
+    border-radius: 100px;
+    background: rgba(30, 36, 72, 0.08);
+    overflow: hidden;
+  }
+  .jauge .remplis {
+    height: 100%;
+    width: 0%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--periwinkle), var(--azur));
+    transition: width 900ms var(--ease-out);
+  }
+  .jauge.lien .remplis { background: linear-gradient(90deg, var(--lilas), var(--rose)); }
+  .jauge .pct {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--gris-bleu);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pied {
+    margin: 6px 20px 0;
+    padding: 12px 0 15px;
+    border-top: 1px solid var(--hairline);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--gris-bleu);
+  }
+  .pied b { color: var(--navy); font-weight: 600; }
+
+  /* ---- Couches spawn + arme : cartes éphémères ---- */
+  .carte {
+    position: absolute;
+    left: 13px;
+    right: 13px;
+    bottom: 13px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    border-radius: 13px;
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+    transition: opacity 360ms var(--ease-pop), transform 360ms var(--ease-pop);
+    pointer-events: none;
+  }
+  .carte.la { opacity: 1; transform: translateY(0) scale(1); }
+  .carte.spawn {
+    background: var(--blanc);
+    box-shadow:
+      0 18px 44px rgba(22, 28, 58, 0.22),
+      0 4px 12px rgba(22, 28, 58, 0.10),
+      0 0 0 1px rgba(30, 36, 72, 0.06);
+  }
+  .carte.arme {
+    background: var(--navy-fonce);
+    box-shadow:
+      0 18px 44px rgba(22, 28, 58, 0.34),
+      0 4px 12px rgba(22, 28, 58, 0.18);
+  }
+  .carte .picto {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+  }
+  .carte.spawn .picto { background: rgba(31, 167, 232, 0.12); }
+  .carte.arme .picto { background: rgba(255, 255, 255, 0.12); }
+  .carte .picto svg { width: 16px; height: 16px; }
+  .carte .etiq {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+  }
+  .carte.spawn .etiq { color: var(--azur-texte); }
+  .carte.arme .etiq { color: var(--cyan); }
+  .carte .mot {
+    display: block;
+    margin-top: 2px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .carte.spawn .mot { color: var(--navy); }
+  .carte.arme .mot { color: #FFFFFF; }
+
+  /* ---- Entrée ---- */
+  .rise {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: rise 700ms var(--ease-out) forwards;
+    animation-delay: var(--d, 0ms);
+  }
+  .pose {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+    animation: pose 800ms var(--ease-out) forwards;
+    animation-delay: 240ms;
+  }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+  @keyframes pose { to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blob { animation: none; }
+    .rise, .pose { animation-duration: 1ms; animation-delay: 0ms; }
+    .statut i { animation: none; }
+    .jauge .remplis { transition-duration: 1ms; transition-delay: 0ms; }
+  }
+
+  @media (max-width: 920px) {
+    body { overflow: auto; }
+    .page { height: auto; min-height: 100%; }
+    main { grid-template-columns: 1fr; padding: 48px 0 38vh; gap: 52px; }
+    .fenetre { justify-self: start; }
+    h1 { max-width: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="horizon" aria-hidden="true">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b5"></div>
+  <div class="blob b4"></div>
+  <div class="blob b3"></div>
+</div>
+
+<div class="page">
+  <header class="rise" style="--d: 0ms">
+    <span class="marque">Navii</span>
+    <a class="btn-nav" href="#">Try Navii</a>
+  </header>
+
+  <main>
+    <div>
+      <h1 class="rise" style="--d: 60ms"><span class="casse">Real-time AI sales coach</span><span class="casse">for <span class="compte">sharp discovery.</span></span></h1>
+      <p class="sous rise" style="--d: 130ms">Reach your prospect's emotion. The pipeline will follow.</p>
+      <div class="actions rise" style="--d: 200ms">
+        <a class="btn-primaire" href="#">Try it on your next call</a>
+        <a class="lien-demo" href="#">Watch the demo · 2 min</a>
+      </div>
+    </div>
+
+    <div class="fenetre pose" role="img" aria-label="The Navii live window, scripted demo: the score climbs as the seller asks good questions, a combo multiplier builds, an opportunity card spawns with three words, an objection triggers the name of a move, and the gauges for Budget, Authority, Need, Timing, Sync, Directness and Next step fill up.">
+      <div class="barre">
+        <span class="titre">Navii</span>
+        <span class="statut"><i></i>LIVE</span>
+      </div>
+
+      <div class="hero">
+        <div class="vivant">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="piste-a" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <canvas id="toile-combo" aria-hidden="true"></canvas>
+          <b class="score" id="score">0</b>
+        </div>
+        <span class="multi" id="multi" aria-hidden="true">×2</span>
+        <span class="gain" id="gain" aria-hidden="true"></span>
+      </div>
+
+      <p class="best">PERSONAL BEST <b>78</b></p>
+
+      <div class="quetes" aria-hidden="true">
+        <div class="famille">
+          <h2>INFO</h2>
+          <div class="jauge" data-q="budget"><label>Budget</label><div class="piste-j"><div class="remplis"></div></div><span class="pct">0</span></div>
+          <div class="jauge" data-q="authority"><label>Authority</label><div class="piste-j"><div class="remplis"></div></div><span class="pct">0</span></div>
+          <div class="jauge" data-q="need"><label>Need</label><div class="piste-j"><div class="remplis"></div></div><span class="pct">0</span></div>
+          <div class="jauge" data-q="timing"><label>Timing</label><div class="piste-j"><div class="remplis"></div></div><span class="pct">0</span></div>
+        </div>
+        <div class="famille">
+          <h2>LINK</h2>
+          <div class="jauge lien" data-q="sync"><label>Sync</label><div class="piste-j"><div class="remplis"></div></div><span class="pct">0</span></div>
+        </div>
+        <div class="famille">
+          <h2>CONTROL</h2>
+          <div class="jauge" data-q="directness"><label>Directness</label><div class="piste-j"><div class="remplis"></div></div><span class="pct">0</span></div>
+          <div class="jauge" data-q="nextstep"><label>Next step</label><div class="piste-j"><div class="remplis"></div></div><span class="pct">0</span></div>
+        </div>
+      </div>
+
+      <div class="pied">
+        <span>Level 3 · <b>Open questions 3/5</b></span>
+        <span>STREAK · 3 CALLS</span>
+      </div>
+
+      <div class="carte spawn" id="carte-spawn" aria-hidden="true">
+        <span class="picto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0E6FA8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <circle cx="12" cy="12" r="3.5"></circle>
+          </svg>
+        </span>
+        <span>
+          <span class="etiq">SPOTTED</span>
+          <span class="mot">Committee — dig in</span>
+        </span>
+      </div>
+
+      <div class="carte arme" id="carte-arme" aria-hidden="true">
+        <span class="picto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#4FC8F5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M13 3 L5 13 h5 l-1 8 8-10 h-5 z"></path>
+          </svg>
+        </span>
+        <span>
+          <span class="etiq">YOUR MOVE</span>
+          <span class="mot">Budget or value?</span>
+        </span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // La fenêtre vivante : un appel de discovery scripté (~35 s) qui boucle.
+  // L'anneau de combo est peint sur canvas — le paint server SVG `stroke: url(#…)`
+  // ne résout pas toujours à froid dans Chrome.
+  (() => {
+    'use strict';
+    const lent = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const toile = document.getElementById('toile-combo');
+    const ctx = toile.getContext('2d');
+    const TAILLE = 120, DPR = Math.min(devicePixelRatio || 1, 2);
+    toile.width = TAILLE * DPR;
+    toile.height = TAILLE * DPR;
+    ctx.scale(DPR, DPR);
+
+    let fractionCourante = 0;
+    function peindre(fraction) {
+      fractionCourante = fraction;
+      ctx.clearRect(0, 0, TAILLE, TAILLE);
+      if (fraction <= 0) return;
+      const grad = ctx.createLinearGradient(0, 0, TAILLE, TAILLE);
+      grad.addColorStop(0, '#7C8CF8');
+      grad.addColorStop(1, '#1FA7E8');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 7;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(60, 60, 52, -Math.PI / 2, -Math.PI / 2 + fraction * 2 * Math.PI);
+      ctx.stroke();
+    }
+
+    let animAnneau = null;
+    function versFraction(cible, duree) {
+      if (animAnneau) cancelAnimationFrame(animAnneau);
+      if (lent) { peindre(cible); return; }
+      const depart = fractionCourante;
+      const t0 = performance.now();
+      (function pas(t) {
+        const p = Math.min((t - t0) / duree, 1);
+        peindre(depart + (cible - depart) * (1 - Math.pow(1 - p, 4)));
+        if (p < 1) animAnneau = requestAnimationFrame(pas);
+      })(t0);
+    }
+
+    const elScore = document.getElementById('score');
+    let scoreCourant = 0;
+    let animScore = null;
+    function versScore(cible, duree) {
+      if (animScore) cancelAnimationFrame(animScore);
+      if (lent) { scoreCourant = cible; elScore.textContent = cible; return; }
+      const depart = scoreCourant;
+      const t0 = performance.now();
+      (function pas(t) {
+        const p = Math.min((t - t0) / duree, 1);
+        scoreCourant = Math.round(depart + (cible - depart) * (1 - Math.pow(1 - p, 3)));
+        elScore.textContent = scoreCourant;
+        if (p < 1) animScore = requestAnimationFrame(pas);
+      })(t0);
+    }
+
+    const elGain = document.getElementById('gain');
+    function gagner(cible, etiquette) {
+      elScore.classList.add('gagne');
+      setTimeout(() => elScore.classList.remove('gagne'), 380);
+      elGain.textContent = etiquette;
+      elGain.classList.remove('vole');
+      void elGain.offsetWidth;
+      elGain.classList.add('vole');
+      versScore(cible, 600);
+    }
+
+    const jauges = {};
+    document.querySelectorAll('.jauge').forEach((j) => {
+      jauges[j.dataset.q] = { remplis: j.querySelector('.remplis'), pct: j.querySelector('.pct') };
+    });
+    function remplir(nom, valeur) {
+      jauges[nom].remplis.style.width = valeur + '%';
+      jauges[nom].pct.textContent = valeur;
+    }
+
+    const carteSpawn = document.getElementById('carte-spawn');
+    const carteArme = document.getElementById('carte-arme');
+    function montrer(carte, duree) {
+      carte.classList.add('la');
+      setTimeout(() => carte.classList.remove('la'), duree);
+    }
+
+    const elMulti = document.getElementById('multi');
+    function multiplicateur(texte) {
+      if (!texte) { elMulti.classList.remove('la'); return; }
+      elMulti.textContent = texte;
+      elMulti.classList.add('la');
+    }
+
+    const partition = [
+      [600,   () => { versScore(12, 900); remplir('sync', 20); remplir('directness', 15); }],
+      [3600,  () => { gagner(20, '+8'); remplir('need', 45); versFraction(1 / 3, 500); }],
+      [6200,  () => { gagner(30, '+10'); remplir('budget', 35); remplir('sync', 45); versFraction(2 / 3, 500); }],
+      [8800,  () => { gagner(42, '+12'); remplir('directness', 45); versFraction(1, 500); setTimeout(() => multiplicateur('×2'), 450); }],
+      [11600, () => { montrer(carteSpawn, 3100); }],
+      [14400, () => { gagner(62, '+10 ×2'); remplir('authority', 55); remplir('sync', 65); }],
+      [17400, () => { multiplicateur(null); versFraction(0, 900); }],
+      [20400, () => { montrer(carteArme, 3100); }],
+      [23600, () => { gagner(70, '+8'); remplir('budget', 70); versFraction(1 / 3, 500); }],
+      [26000, () => { gagner(76, '+6'); remplir('timing', 60); remplir('nextstep', 85); remplir('directness', 70); versFraction(2 / 3, 500); }],
+      [33400, () => { rejouer(); }]
+    ];
+
+    let minuteries = [];
+    function jouer() {
+      partition.forEach(([t, fn]) => minuteries.push(setTimeout(fn, t)));
+    }
+    function rejouer() {
+      minuteries.forEach(clearTimeout);
+      minuteries = [];
+      versScore(0, 500);
+      versFraction(0, 400);
+      multiplicateur(null);
+      Object.keys(jauges).forEach((nom) => {
+        jauges[nom].remplis.style.width = '0%';
+        jauges[nom].pct.textContent = '0';
+      });
+      setTimeout(jouer, 1200);
+    }
+
+    if (lent) {
+      versScore(76, 1);
+      peindre(2 / 3);
+      multiplicateur('×2');
+      remplir('budget', 70); remplir('authority', 55); remplir('need', 45);
+      remplir('timing', 60); remplir('sync', 65); remplir('directness', 70);
+      remplir('nextstep', 85);
+    } else {
+      jouer();
+    }
+  })();
+
+  addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') location.href = '01-horizon.html';
+    if (e.key === 'ArrowLeft')  location.href = '03-ascension.html';
+    if (e.key === 'Escape')     location.href = 'index.html';
+  });
+</script>
+</body>
+</html>
