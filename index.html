@@ -141,7 +141,10 @@
     font-size: clamp(18px, 1.5vw, 21px);
     line-height: 1.5;
     color: var(--gris-bleu);
-    max-width: 46ch;
+    /* ⚠️ 54ch et non 46 depuis le 25/11 : le sous-titre validé fait trois fois
+       la longueur de l'ancien, et à 46ch il poussait les deux CTA hors du
+       premier écran. Seule retouche de style de ce lot. */
+    max-width: 54ch;
   }
 
   .actions {
@@ -447,8 +450,8 @@
 
   <main>
     <div>
-      <h1 class="rise" style="--d: 60ms"><span class="casse">Real-time AI sales coach</span><span class="casse">for <span class="compte">sharp discovery.</span></span></h1>
-      <p class="sous rise" style="--d: 130ms">Reach your prospect's emotion. The pipeline will follow.</p>
+      <h1 class="rise" style="--d: 60ms"><span class="casse">Your live</span><span class="casse"><span class="compte">discovery coach.</span></span></h1>
+      <p class="sous rise" style="--d: 130ms">Navii coaches you during the call so you forget nothing, keeps you in the driver's seat, and levels you up on advanced sales techniques. The result: a lean pipe, deals that stop ghosting you — you sell more, on time.</p>
       <div class="actions rise" style="--d: 200ms">
         <a class="btn-primaire" href="https://app.naviicoach.com/inscription">Try it on your next call</a>
         <a class="lien-demo" href="#">Watch the demo · 2 min</a>
